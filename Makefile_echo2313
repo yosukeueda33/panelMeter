@@ -1,0 +1,71 @@
+MCU       = attiny2313
+PART      = t2313
+F_CPU     = 10000000UL
+BAUD      = 9600
+
+TARGET    = echo2313
+
+CC        = avr-gcc
+OBJCOPY   = avr-objcopy
+AVRDUDE   = avrdude
+
+PROGRAMMER = avrispmkII
+
+GEN_DIR   = generated
+
+# Ivory generator.
+# stackプロジェクトなら通常これでよい。
+GENERATOR = stack run
+
+CFLAGS = \
+	-mmcu=$(MCU) \
+	-DF_CPU=$(F_CPU) \
+	-DBAUD=$(BAUD) \
+	-Os \
+	-std=c11 \
+	-Wall \
+	-Wextra \
+	-ffunction-sections \
+	-fdata-sections \
+	-I. \
+	-I$(GEN_DIR)
+
+LDFLAGS = \
+	-mmcu=$(MCU) \
+	-Wl,--gc-sections
+
+SRCS = \
+	echo2313.c \
+	$(GEN_DIR)/Communicate.c
+
+OBJS = $(SRCS:.c=.o)
+
+.PHONY: all generate flash clean size disasm
+
+all: generate $(TARGET).hex size
+
+generate:
+	$(GENERATOR)
+
+$(TARGET).elf: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+
+$(TARGET).hex: $(TARGET).elf
+	$(OBJCOPY) -O ihex -R .eeprom $< $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+flash: $(TARGET).hex
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(PART) -U flash:w:$(TARGET).hex:i
+
+size: $(TARGET).elf
+	avr-size -C --mcu=$(MCU) $(TARGET).elf
+
+disasm: $(TARGET).elf
+	avr-objdump -d $(TARGET).elf > $(TARGET).lst
+
+clean:
+	rm -f $(TARGET).elf $(TARGET).hex $(TARGET).lst
+	rm -f echo2313.o
+	rm -f $(GEN_DIR)/*.o
