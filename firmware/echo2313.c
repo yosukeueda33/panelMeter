@@ -14,7 +14,10 @@
 #define F_CPU 10000000UL
 #endif
 
+#ifndef BAUD
 #define BAUD 9600UL
+#endif
+
 #define UBRR_VALUE ((F_CPU / (16UL * BAUD)) - 1UL)
 
 #include <avr/io.h>
@@ -24,6 +27,25 @@
 #include <stdint.h>
 #include "infra.h"
 #include "generated/Communicate.h"
+#include "generated/copilot_cords.h"
+
+volatile bool tick_pending = false;
+static volatile uint8_t tick_div = 0;
+
+volatile uint8_t input_0 = 0;
+volatile uint8_t input_1 = 0;
+
+ISR(TIMER0_OVF_vect)
+{
+    // Timer0 overflow = 約610Hz
+    // 6回に1回で約101.7Hz
+    tick_div++;
+
+    if (tick_div >= 6) {
+        tick_div = 0;
+        tick_pending = true;
+    }
+}
 
 /* -----------------------------
  * TX ring buffer
@@ -105,9 +127,7 @@ static void uart_disable_udre_interrupt(void)
 ISR(UART_RX_VECTOR)
 {
     uint8_t x_rx = UDR;
-    uint8_t x_tx = UDR;
-
-    x_tx = parseByte(x_rx);
+    uint8_t x_tx = parseByte(x_rx);
 
     if (pushTxBuffer(x_tx)) {
         uart_enable_udre_interrupt();
@@ -137,21 +157,32 @@ ISR(UART_UDRE_VECTOR)
     }
 }
 
-/* -----------------------------
- * main
- * ----------------------------- */
+ void loop(void) {
+  if (!tick_pending) {
+    return;
+  }
+
+  cli();
+  tick_pending = false;
+  sei();
+
+  read_inputs();
+  step();
+}
 
 int main(void)
 {
+#ifdef OSCCAL_VALUE
+  OSCCAL = OSCCAL_VALUE;
+#endif
     uart_init();
 
+    setup_gpio();
     setup_meter_pwm();
-    set_sleep_mode(SLEEP_MODE_IDLE);
-    sleep_enable();
 
     sei();
 
     for (;;) {
-        sleep_cpu();
+        loop();
     }
 }

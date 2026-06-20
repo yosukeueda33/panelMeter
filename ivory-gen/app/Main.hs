@@ -19,6 +19,8 @@ txBufferHead = area "txBufferHead" $ Just (ival 0)
 txBufferTail :: MemArea ('Stored Uint8)
 txBufferTail = area "txBufferTail" $ Just (ival 0)
 
+lightStates :: MemArea (Array 4 (Stored Uint8))
+lightStates = area "lightStates" . Just . iarray $ replicate 4 izeroval
 
 setMeter :: Def ('[Uint8, Uint8] ':-> ())
 setMeter = importProc "set_meter" "infra.h"
@@ -76,6 +78,10 @@ index = area "index" $ Just (ival stateNone)
 
 when_ c x = ifte_ c x $ return ()
 
+setLightStates = store . (!) (addrOf lightStates) . toIx
+
+meterLength = 4
+
 parseByte :: Def ('[Uint8] ':-> Uint8)
 parseByte = proc "parseByte" $ \x -> body $ do
   s <- deref $ addrOf state
@@ -102,7 +108,11 @@ parseByte = proc "parseByte" $ \x -> body $ do
         ifte_ (s ==? stateGotHeadZero)
           (setIndex x >> setState stateGotIndex)
           $ ifte_ (s ==? stateGotIndex)
-              ( call_ setMeter i (x :: Uint8) >> setState stateNone)
+              ( ifte_(i <? (meterLength :: Uint8))
+                  (call_ setMeter i (x :: Uint8))
+                  (setLightStates (i - (meterLength :: Uint8)) x)
+                >> setState stateNone
+              )
               (return ()) -- stateNone or else
         ret x
 
@@ -122,6 +132,7 @@ communicateModule = package "Communicate" $ do
   defMemArea txBuffer
   defMemArea txBufferHead
   defMemArea txBufferTail
+  defMemArea lightStates
   incl setMeter
   -- incl setLight
 
