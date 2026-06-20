@@ -22,6 +22,7 @@
 #include <avr/sleep.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "infra.h"
 #include "generated/Communicate.h"
 
 /* -----------------------------
@@ -103,9 +104,12 @@ static void uart_disable_udre_interrupt(void)
  */
 ISR(UART_RX_VECTOR)
 {
-    uint8_t x = UDR;
+    uint8_t x_rx = UDR;
+    uint8_t x_tx = UDR;
 
-    if (pushTxBuffer(x)) {
+    x_tx = parseByte(x_rx);
+
+    if (pushTxBuffer(x_tx)) {
         uart_enable_udre_interrupt();
     }
 }
@@ -141,6 +145,7 @@ int main(void)
 {
     uart_init();
 
+    setup_meter_pwm();
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
 

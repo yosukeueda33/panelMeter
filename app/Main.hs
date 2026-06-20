@@ -20,8 +20,8 @@ txBufferTail :: MemArea ('Stored Uint8)
 txBufferTail = area "txBufferTail" $ Just (ival 0)
 
 
--- setMeter :: Def ('[Uint8, Uint8] ':-> ())
--- setMeter = importProc "set_meter" "infra.h"
+setMeter :: Def ('[Uint8, Uint8] ':-> ())
+setMeter = importProc "set_meter" "infra.h"
 
 -- setLight :: Def ('[Uint8, Uint8] ':-> ())
 -- setLight = importProc "set_light" "infra.h"
@@ -64,6 +64,49 @@ popTxBuffer = proc "popTxBuffer" $ \out -> body $ do
         ret true
     )
 
+state :: MemArea ('Stored Uint8)
+state = area "state" $ Just (ival 0)
+
+stateNone = 0 :: Uint8
+stateGotHeadZero = 1 :: Uint8
+stateGotIndex = 2 :: Uint8
+
+index :: MemArea ('Stored Uint8)
+index = area "index" $ Just (ival stateNone)
+
+when_ c x = ifte_ c x $ return ()
+
+parseByte :: Def ('[Uint8] ':-> Uint8)
+parseByte = proc "parseByte" $ \x -> body $ do
+  s <- deref $ addrOf state
+  i <- deref $ addrOf index
+
+  let
+    u = iShiftR x 4 -- upper nibble
+    l = x .& 0x0F -- lower nibble
+    isHead = u ==? 0x8 
+    setState y = store (addrOf state) y
+    setIndex y = store (addrOf index) y
+
+  ifte_ isHead
+    (
+      ifte_ (l ==? 0xF)
+        (setState stateNone >> ret 0x8F)
+        $ ifte_ (l ==? 0x0)
+            ( setState stateGotHeadZero
+              >> ret 0x8F
+            )
+            (ret $ x - 1)
+    )
+    $ do
+        ifte_ (s ==? stateGotHeadZero)
+          (setIndex x >> setState stateGotIndex)
+          $ ifte_ (s ==? stateGotIndex)
+              ( call_ setMeter i (x :: Uint8) >> setState stateNone)
+              (return ()) -- stateNone or else
+        ret x
+
+
 helloModule :: Module
 helloModule = package "HelloWorld" $ do
   incl printf
@@ -71,13 +114,15 @@ helloModule = package "HelloWorld" $ do
 
 communicateModule :: Module
 communicateModule = package "Communicate" $ do
-  -- incl parseByte
+  incl parseByte
   incl pushTxBuffer
   incl popTxBuffer
+  defMemArea state
+  defMemArea index
   defMemArea txBuffer
   defMemArea txBufferHead
   defMemArea txBufferTail
-  -- incl setMeter
+  incl setMeter
   -- incl setLight
 
 main :: IO ()

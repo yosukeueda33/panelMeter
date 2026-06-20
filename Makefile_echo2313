@@ -35,6 +35,7 @@ LDFLAGS = \
 	-Wl,--gc-sections
 
 SRCS = \
+	infra.c \
 	echo2313.c \
 	$(GEN_DIR)/Communicate.c
 
@@ -67,5 +68,4 @@ disasm: $(TARGET).elf
 
 clean:
 	rm -f $(TARGET).elf $(TARGET).hex $(TARGET).lst
-	rm -f echo2313.o
-	rm -f $(GEN_DIR)/*.o
+	rm -f $(OBJS)
