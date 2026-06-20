@@ -7,3 +7,8 @@ generated/*
 *.hex
 .vscode/tasks.json
 stack.yaml.lock
+ivory-gen/generated/*
+copilot-gen/*.h
+copilot-gen/*.c
+firmware/generated/*
+ivory-gen/awsPanelMeter.cabal.old

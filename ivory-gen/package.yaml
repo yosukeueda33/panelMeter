@@ -1,0 +1,31 @@
+name: awsPanelMeter-ivory
+version: 0.1.0.0
+github: "iwalkedalongthewalllikaeninjaa/awsPanelMeter"
+license: BSD3
+author: "Yosuke Ueda"
+maintainer: "iwalkedalongthewalllikaeninjaa@gmail.com"
+copyright: "2026 Yosuke Ueda"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+dependencies:
+- base >= 4.7 && < 5
+- ivory
+- ivory-backend-c
+- ivory-stdlib
+- ivory-hw
+- ivory-artifact
+- ivory-opts
+- ivory-serialize
+
+library:
+  source-dirs: src
+
+executables:
+  awsPanelMeter-ivory:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+    - awsPanelMeter-ivory
