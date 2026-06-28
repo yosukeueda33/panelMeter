@@ -73,6 +73,12 @@ size: $(TARGET).elf
 disasm: $(TARGET).elf
 	avr-objdump -d $(TARGET).elf > $(TARGET).lst
 
+fuseread:
+	avrdude -c $(PROGRAMMER) -p $(PART) -U lfuse:r:-:h -U hfuse:r:-:h -U efuse:r:-:h
+
+fusewrite:
+	avrdude -c $(PROGRAMMER) -p $(PART) -U lfuse:w:0xFF:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m
+
 clean:
 	rm -f $(TARGET).elf $(TARGET).hex $(TARGET).lst
 	rm -f $(OBJS)
