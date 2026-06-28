@@ -1,4 +1,4 @@
-# awsPanelMeter
+# panelMeter
 
 ## 3-byte UART protocol
 

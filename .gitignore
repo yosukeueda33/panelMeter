@@ -11,4 +11,4 @@ ivory-gen/generated/*
 copilot-gen/*.h
 copilot-gen/*.c
 firmware/generated/*
-ivory-gen/awsPanelMeter.cabal.old
+ivory-gen/panelMeter.cabal.old

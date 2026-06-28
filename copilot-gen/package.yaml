@@ -1,6 +1,6 @@
-name: awsPanelMeter-copilot
+name: panelMeter-copilot
 version: 0.1.0.0
-github: "iwalkedalongthewalllikaeninjaa/awsPanelMeter"
+github: "iwalkedalongthewalllikaeninjaa/panelMeter"
 license: BSD3
 author: "Yosuke Ueda"
 maintainer: "iwalkedalongthewalllikaeninjaa@gmail.com"
@@ -24,8 +24,8 @@ library:
   source-dirs: src
 
 executables:
-  awsPanelMeter-copilot:
+  panelMeter-copilot:
     main: Main.hs
     source-dirs: app
     dependencies:
-    - awsPanelMeter-copilot
+    - panelMeter-copilot
